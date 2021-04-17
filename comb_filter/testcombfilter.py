@@ -48,13 +48,17 @@ class MySignal(object):
     color = ''
     f_s = 0
     length = 0
+    a = 0
+    b = 0
 
-    def __init__(self, y, x, color, f_s, length=1):
+    def __init__(self, y, x, color, f_s, b=None, a=None, length=None):
         self.x = x
         self.y = y
         self.color = color
         self.f_s = f_s
         self.length = length
+        self.a = a
+        self.b = b
 
 
 
@@ -64,18 +68,11 @@ class MplCanvas(FigureCanvasQTAgg):
 
     # Layout - 3 Rows, 2 Colums
 
-    #   | Original Time Domain    | Original FFT Linear Spectrum    |
-    #   | Upsampled Time Domain   | Upsampled FFT Linear Spectrum   |  
-    #   | Downsampled Time Domain | Downsampled FFT Linear Spectrum |
-    #   
-    #   | Upsampling Slider       | Downsampling Slider             |
-
-
     def __init__(self, parent=None, width=5, height=4, dpi=100):
 
         # Plot and its title
         fig = Figure(figsize=(width, height), dpi=dpi)
-        fig.suptitle('Functions: Time Domain | Fourier Domain')
+        fig.suptitle('Filters - Original Filter | Converted to comb filter')
 
         # Format spaces between plots
         fig.subplots_adjust(left=0.125,
@@ -87,32 +84,29 @@ class MplCanvas(FigureCanvasQTAgg):
 
         # The Plots and their formatting
         # PLOT 1
-        self.iir_filter_plot = fig.add_subplot(321, title='Original Square Signal')
-        self.iir_filter_plot.set_xlabel('t [s]')
-        self.iir_filter_plot.set_ylabel('f(t)')
-        self.iir_filter_plot.set_ylim(-2.0,2.0)
+        self.iir_filter_plot = fig.add_subplot(221, title='IIR Filter')
+        self.iir_filter_plot.set_xlabel('Frequency [Hz]')
+        self.iir_filter_plot.set_ylabel('Amplitude [dB]')
+        #self.iir_filter_plot.set_ylim(-2.0,2.0)
         
         # PLOT 2
-        self.original_fft_plot = fig.add_subplot(322, title='Original Linear Spectrum')
+        self.iir_comb_filter_plot = fig.add_subplot(222, title='IIR Comb Filter')
+        self.iir_comb_filter_plot.set_xlabel('Frequency [Hz]')
+        self.iir_comb_filter_plot.set_ylabel('Amplitude [dB]')
+        #self.iir_comb_filter_plot.set_ylim(-2.0,2.0)
         
         # PLOT 3
-        self.fir_filter_plot = fig.add_subplot(323, title='Upsampled Square Signal')
-        self.fir_filter_plot.set_xlabel('t [s]')
-        self.fir_filter_plot.set_ylabel('f(t)')
-        self.fir_filter_plot.set_ylim(-2.0,2.0)
+        self.fir_filter_plot = fig.add_subplot(223, title='FIR Filter')
+        self.fir_filter_plot.set_xlabel('Frequency [Hz]')
+        self.fir_filter_plot.set_ylabel('Amplitude [dB]')
+        #self.fir_filter_plot.set_ylim(-2.0,2.0)
         
         # PLOT 4
-        self.fir_comb_filter_plot = fig.add_subplot(324, title='Upsampled Linear Spectrum')
+        self.fir_comb_filter_plot = fig.add_subplot(224, title='FIR Comb Filter')
+        self.fir_comb_filter_plot.set_xlabel('Frequency [Hz]')
+        self.fir_comb_filter_plot.set_ylabel('Amplitude [dB]')
+        #self.fir_comb_filter_plot.set_ylim(-2.0,2.0)
         
-        # PLOT 5
-        self.iir_filter_plot = fig.add_subplot(325, title='Downsampled Square Signal')
-        self.iir_filter_plot.set_xlabel('t [s]')
-        self.iir_filter_plot.set_ylabel('f(t)')
-        self.iir_filter_plot.set_ylim(-2.0,2.0)
-        
-        # PLOT 6
-        self.iir_comb_filter_plot = fig.add_subplot(326, title='Downsampled Linear Spectrum')
-
 
         super(MplCanvas, self).__init__(fig)
 
@@ -129,7 +123,7 @@ class MainWindow(QWidget):
 
         # Set Window Size and Title
         self.setGeometry(200, 200, 1200, 900)
-        self.setWindowTitle('Up- and Downsampling Demonstration - Armin Niedermüller')
+        self.setWindowTitle('Up- and FIR Combing Demonstration - Armin Niedermüller')
 
         # Define a grid layout
         grid_layout = QGridLayout()
@@ -139,39 +133,39 @@ class MainWindow(QWidget):
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
 
         # Create checkboxes
-        self.upsampleCheckBox = QCheckBox("Upsampling")
-        self.downsampleCheckBox = QCheckBox("Downsampling")
-        self.upsampleCheckBox.setChecked(False)
-        self.downsampleCheckBox.setChecked(False)
-        self.upsampleCheckBox.stateChanged.connect(self.upsamplingCheckboxAction)
-        self.downsampleCheckBox.stateChanged.connect(self.downsamplingCheckboxAction)
+        self.iir_comb_checkbox = QCheckBox("IIR to IIR-comb")
+        self.fir_comb_checkbox = QCheckBox("FIR to FIR-comb")
+        self.iir_comb_checkbox.setChecked(False)
+        self.fir_comb_checkbox.setChecked(False)
+        self.iir_comb_checkbox.stateChanged.connect(self.iirCheckBoxAction)
+        self.fir_comb_checkbox.stateChanged.connect(self.firCheckBoxAction)
 
 
         # Create a slider
-        self.upsample_slider = QSlider(Qt.Horizontal)
-        self.upsample_slider.setRange(0,10)
-        self.upsample_slider.setSingleStep(1)
-        self.upsample_slider.setValue(1)
-        self.upsample_slider.setTickInterval(1)
-        self.upsample_slider.setTickPosition(QSlider.TicksBothSides)
+        self.iir_comb_slider = QSlider(Qt.Horizontal)
+        self.iir_comb_slider.setRange(0,10)
+        self.iir_comb_slider.setSingleStep(1)
+        self.iir_comb_slider.setValue(1)
+        self.iir_comb_slider.setTickInterval(1)
+        self.iir_comb_slider.setTickPosition(QSlider.TicksBothSides)
 
         # Create a slider
-        self.downsample_slider = QSlider(Qt.Horizontal)
-        self.downsample_slider.setRange(0,10)
-        self.downsample_slider.setSingleStep(1)
-        self.downsample_slider.setValue(1)
-        self.downsample_slider.setTickInterval(1)
-        self.downsample_slider.setTickPosition(QSlider.TicksBothSides)
+        self.fir_comb_slider = QSlider(Qt.Horizontal)
+        self.fir_comb_slider.setRange(0,10)
+        self.fir_comb_slider.setSingleStep(1)
+        self.fir_comb_slider.setValue(1)
+        self.fir_comb_slider.setTickInterval(1)
+        self.fir_comb_slider.setTickPosition(QSlider.TicksBothSides)
 
         # Create Labels
-        self.downsampleLabel = QtWidgets.QLabel()
-        self.downsampleLabel.setText('Status: INACTIVE')
-        self.upsampleLabel = QtWidgets.QLabel()
-        self.upsampleLabel.setText('Status: INACTIVE')
+        self.fir_comb_label = QtWidgets.QLabel()
+        self.fir_comb_label.setText('Status: INACTIVE')
+        self.iir_comb_label = QtWidgets.QLabel()
+        self.iir_comb_label.setText('Status: INACTIVE')
 
         # Connect the sliders to our plots - if the slider value changes, the plot is updated
-        self.upsample_slider.valueChanged[int].connect(self.upsamplePlot)
-        self.downsample_slider.valueChanged[int].connect(self.downsamplePlot)
+        self.iir_comb_slider.valueChanged[int].connect(self.IIRplotUpdate)
+        self.fir_comb_slider.valueChanged[int].connect(self.FIRplotUpdate)
 
         # Layout - 3 Rows, 2 Colums
 
@@ -179,10 +173,10 @@ class MainWindow(QWidget):
         #   | Upsampled Time Domain     | Upsampled FFT Linear Spectrum   |  
         #   | Downsampled Time Domain   | Downsampled FFT Linear Spectrum |
         #   
-        #   | Upsampling Checkbox       | Upsampling Slider               |
-        #   | Upsampling Status         | Upsampling Slider               |
-        #   | Downsampling Checkbox     | Downsampling Slider             |
-        #   | Downsampling Status       | Downsampling Slider             |
+        #   | IIR Combing Checkbox       | IIR Combing Slider               |
+        #   | IIR Combing Status         | IIR Combing Slider               |
+        #   | FIR Combing Checkbox     | FIR Combing Slider             |
+        #   | FIR Combing Status       | FIR Combing Slider             |
 
 
         # Create a Grid Layout and put the single widgets into it
@@ -191,17 +185,17 @@ class MainWindow(QWidget):
         #   | Downsampled Time Domain | Downsampled FFT Linear Spectrum   | 
         grid_layout.addWidget(self.canvas, 1,1,12,10) # span over 12 rows and 10 columns
         
-        #   | Upsampling Checkbox       | Upsampling Slider               |
-        #   | Upsampling Status         | Upsampling Slider               |
-        grid_layout.addWidget(self.upsampleCheckBox, 13,1,1,1)
-        grid_layout.addWidget(self.upsampleLabel, 14,1,1,1)
-        grid_layout.addWidget(self.upsample_slider, 13,2,2,9)     
+        #   | IIR Combing Checkbox       | IIR Combing Slider               |
+        #   | IIR Combing Status         | IIR Combing Slider               |
+        grid_layout.addWidget(self.iir_comb_checkbox, 13,1,1,1)
+        grid_layout.addWidget(self.iir_comb_label, 14,1,1,1)
+        grid_layout.addWidget(self.iir_comb_slider, 13,2,2,9)     
         
-        #   | Downsampling Checkbox     | Downsampling Slider             |
-        #   | Downsampling Status       | Downsampling Slider             |
-        grid_layout.addWidget(self.downsampleLabel, 15,1,1,1)
-        grid_layout.addWidget(self.downsampleCheckBox, 16,1,1,1)
-        grid_layout.addWidget(self.downsample_slider, 15,2,2,9)
+        #   | FIR Combing Checkbox     | FIR Combing Slider             |
+        #   | FIR Combing Status       | FIR Combing Slider             |
+        grid_layout.addWidget(self.fir_comb_label, 15,1,1,1)
+        grid_layout.addWidget(self.fir_comb_checkbox, 16,1,1,1)
+        grid_layout.addWidget(self.fir_comb_slider, 15,2,2,9)
 
        
         # A dictionary where our functions are stored
@@ -209,277 +203,150 @@ class MainWindow(QWidget):
         self.signals = dict()
 
         # Initial Values for checkboxes
-        self.activateUpsampling = False
-        self.activateDownsampling = False
+        self.activateIIRCombFilter = False
+        self.activateFIRCombFilter = False
 
         self.show()
 
 
-    # Upsampling Checkbox Function
-    def upsamplingCheckboxAction(self, state):
+    # IIR Combing Checkbox Function
+    def iirCheckBoxAction(self, state):
         if (Qt.Checked == state):
             # activate upsampling
-            self.activateUpsampling = True
-            self.upsampleLabel.setText('Status: ACTIVE')
+            self.activateIIRCombFilter = True
+            self.iir_comb_label.setText('Status: ACTIVE')
         else: 
             # deactivate upsampling
-            self.activateUpsampling = False
-            self.upsampleLabel.setText('Status: INACTIVE')
-            self.upsamplePlot(1)
+            self.activateIIRCombFilter = False
+            self.iir_comb_label.setText('Status: INACTIVE')
+            self.IIRplotUpdate(1)
 
 
-    # Downsampling Checkbox Function
-    def downsamplingCheckboxAction(self, state):
+    # FIR Combing Checkbox Function
+    def firCheckBoxAction(self, state):
         if (Qt.Checked == state):
             # activate downsampling
-            self.activateDownsampling = True
-            self.downsampleLabel.setText('Status: ACTIVE')
+            self.activateFIRCombFilter = True
+            self.fir_comb_label.setText('Status: ACTIVE')
         else: 
             # deactivate downsampling
-            self.activateDownsampling = False
-            self.downsampleLabel.setText('Status: INACTIVE')
-            self.downsamplePlot(1)
-
-
-    # Add a function to our plots
-    def addFunction(self, y, x, color, name, f_s, length):
-        
-        newSignal = MySignal(y, x, color, f_s, length)
-
-        # SIGNAL - Add plot reference to our List of plot refs
-        self.plot_refs[name] = self.canvas.iir_filter_plot.plot(newSignal.y,
-                                                newSignal.x,
-                                                newSignal.color) 
-        # And add the functions to our extra list
-        self.signals[name] = newSignal
-
-        # SPECTRUM
-        X = np.fft.fft(x)
-
-        # Add plot reference to our List of plot refs
-        self.plot_refs[name + 'fft'] = self.canvas.original_fft_plot.plot(abs(X), newSignal.color) 
-
-        # update Plots
-        self.upsamplePlot(1)
-        self.downsamplePlot(1)
+            self.activateFIRCombFilter = False
+            self.fir_comb_label.setText('Status: INACTIVE')
+            self.FIRplotUpdate(1)
 
 
     # Add a filter to our plots
-    def addFilter(self, f_0, f_s, d_t, color, type=None, Q=1):
+    def addFilter(self, f_0, f_1, f_s, d_t, color, type=None, Q=1):
         
-        if type == 'fir_notch':
-            f1 = 3000
-            numtaps = 3
+        if type == 'fir':
+            numtaps = 37
     
             # filter coeffs
             a = 1
-            b = signal.firwin(numtaps, f1, pass_zero=False, fs=f_s)
-        elif type == 'iir_notch':
+            b = signal.firwin(numtaps, [f_0, f_1], fs=f_s, window=('kaiser', 8))
+        elif type == 'iir':
             # filter coeffs
             b,a = signal.iirnotch(f_0, Q, f_s)
 
         else: 
             return 0
     
-        # Transfer function - used fore dimpulse, dstep, scipy,...
-        #filter = signal.TransferFunction(b, a, dt=d_t)
-       
         # Calculate frequency and amplitude
         freq, h = signal.freqz(b, a, fs=f_s)
-       
+        
         # Create filter object
-        newFilter = MySignal(freq, h, color, f_s)
+        combedFilter = MySignal(freq, 20 * np.log10(abs(h)), color, f_s, b, a)
        
         # SIGNAL - Add plot reference to our List of plot refs
-        if type == 'fir_notch':
-            self.plot_refs[type] = self.canvas.fir_filter_plot.plot(newFilter.y,
-                                                newFilter.x,
-                                                newFilter.color)
-        elif type == 'iir_notch':
-            self.plot_refs[type] = self.canvas.iir_filter_plot.plot(newFilter.y,
-                                                newFilter.x,
-                                                newFilter.color) 
+        if type == 'fir':
+            self.plot_refs["fir_filter"] = self.canvas.fir_filter_plot.plot(combedFilter.y,
+                                                combedFilter.x,
+                                                combedFilter.color)
+            self.plot_refs["fir_comb_filter"] = self.canvas.fir_comb_filter_plot.plot(combedFilter.y,
+                                                combedFilter.x,
+                                                combedFilter.color)
+        elif type == 'iir':
+            self.plot_refs["iir_filter"] = self.canvas.iir_filter_plot.plot(combedFilter.y,
+                                                combedFilter.x,
+                                                combedFilter.color) 
+            self.plot_refs["iir_comb_filter"] = self.canvas.iir_comb_filter_plot.plot(combedFilter.y,
+                                                combedFilter.x,
+                                                combedFilter.color) 
        
         # And add the functions to our extra list
-        self.signals[type] = newFilter
+        self.signals[type+"_filter"] = combedFilter
+        self.signals[type+"_comb_filter"] = combedFilter
     
-        # SPECTRUM
-        #X = np.fft.fft(x)
-        #
-        ## Add plot reference to our List of plot refs
-        #self.plot_refs[name + 'fft'] = self.canvas.original_fft_plot.plot(abs(X), newSignal.color) 
-        #
         ## update Plots
-        #self.upsamplePlot(1)
-        #self.downsamplePlot(1)
+        if type == 'fir':
+            self.FIRplotUpdate(1)
+        elif type == 'iir':
+            self.IIRplotUpdate(1)
 
 
     # Function to be called after using the slider
-    def upsamplePlot(self, value):
-        
-        if self.signals['square signal'] is None:
+    def IIRplotUpdate(self, value):
+
+        # Does the original filter even exist?
+        if self.signals['iir_filter'] is None:
             return False 
-
-        f_s = self.signals['square signal'].f_s
-        length = self.signals['square signal'].length
-
-        # Upsampling
-        # 0 er Array erstellen
-        l_upsampling = value
-        np.zeros(f_s * l_upsampling)
-
-        # our function
-        x = self.signals['square signal'].x
         
-
-        # Calculate FFT
-        X = np.fft.fft(x)
-        freq = np.fft.fftfreq(len(x), 1/f_s)
-
-        # Add zeros
-        X_upsampled = np.insert(X, int(X.shape[0]/2), np.zeros(f_s * l_upsampling))
-        Y_upsampled = np.arange(0, X.shape[0] + f_s * l_upsampling)
-
-        # Inverse FFT
-        x_upsampled = np.fft.ifft(X_upsampled)
-       
-        # Keep energy the same after transformations / up-downsampling
-        if l_upsampling != 0:
-            x_upsampled *= X_upsampled.shape[0] / X.shape[0]
-            
-        # Create vector from 0 to 1 - stepsize = 1/fs
-        t_upsampled = np.linspace(0, length,
-                                 f_s
-                                 + f_s * l_upsampling)
-
-        # Only upsample if Checkbox is active
-        if self.activateUpsampling is True:
-            upsampledSignal = MySignal(t_upsampled, x_upsampled, 'g', f_s, length)
-        else:
-            upsampledSignal = self.signals['square signal']
-            upsampledSignal.color = 'g'
-            X_upsampled = X
-            Y_upsampled = np.arange(0, X.shape[0])
-
-
-        # Add the upsampled signal to our plots
-        if self.plot_refs.get('upsampled square signal') is None:
-
-            # Add SIGNAL plot reference to our List of plot_refs
-            self.plot_refs['upsampled square signal'] = self.canvas.fir_filter_plot.plot(upsampledSignal.y,
-                                                    upsampledSignal.x,
-                                                    upsampledSignal.color) 
-
-            # Add SPECTRUM plot reference to our List of plot_refs
-            self.plot_refs['upsampled fft'] = self.canvas.fir_comb_filter_plot.plot(
-                                                    abs(X_upsampled),
-                                                    upsampledSignal.color) 
-
-        # change values over reference
-        else:
-            # SIGNAL
-            self.plot_refs['upsampled square signal'][0].set_ydata(upsampledSignal.x)
-            self.plot_refs['upsampled square signal'][0].set_xdata(upsampledSignal.y)
-            self.plot_refs['upsampled square signal'][0].set_color(upsampledSignal.color)
-            
-            # SPECTRUM
-            self.plot_refs['upsampled fft'][0].set_ydata(np.abs(X_upsampled))
-            self.plot_refs['upsampled fft'][0].set_xdata(Y_upsampled)
-
-            # SPECTRUM - change the x value range of the plot accordingly
-            if self.activateUpsampling is True:
-                self.canvas.fir_comb_filter_plot.set_xlim(0,  X.shape[0] + f_s * l_upsampling)
-            else:   
-                self.canvas.fir_comb_filter_plot.set_xlim(0,  X.shape[0])
-
-        # Trigger the canvas to update and redraw.
+        # Get some data from our filter
+        f_s = self.signals['iir_comb_filter'].f_s
+        a = self.signals['iir_comb_filter'].a
+        b = self.signals['iir_comb_filter'].b
+        
+        # Convert Filter to Comb Filter
+        b_comb, a_comb = combfilter(b,a, value)
+        
+        # Calculate frequency and amplitude
+        freq, h = signal.freqz(b_comb, a_comb, fs=f_s)
+        
+        # Only create comb filter if checkbox is True
+        if self.activateIIRCombFilter is True:
+            combedFilter = MySignal(freq, 20 * np.log10(abs(h)), 'g', f_s, b_comb, a_comb)
+        else: # else display the original uncombed filter
+            combedFilter = self.signals["iir_filter"]
+            combedFilter.color = 'r'
+        
+        self.plot_refs['iir_comb_filter'][0].set_ydata(combedFilter.x)
+        self.plot_refs['iir_comb_filter'][0].set_xdata(combedFilter.y)
+        self.plot_refs['iir_comb_filter'][0].set_color(combedFilter.color)
+        
         self.canvas.draw()
 
 
 
     # Function to be called after using the slider
-    def downsamplePlot(self, value):
+    def FIRplotUpdate(self, value):
      
-            if self.signals['square signal'] is None or value == 0:
-                return False 
-
-            # our function and sampling frequency
-            x = self.signals['square signal'].x
-            y = self.signals['square signal'].x
-            f_s = self.signals['square signal'].f_s
-            length = self.signals['square signal'].length
-
-            # Our downsampling factor
-            downsampling_factor = value
-
-            # Create an FIR Anti-Aliasing Filter
-            # Cutoff Frequency is f_s/2 
-            # by - 0.01 we give a headroom for the filter of 1 %  
-            b = signal.firwin(30, (1.0/downsampling_factor) - 0.01) 
-
-            # Apply the Anti-Aliasgin Filter
-            # Since a FIR filter only has b coefficients, set a = 1
-            a=1
-            lowpass = signal.lfilter(b, a, x) 
-
-            # Create vector from 0 to 1 - stepsize = 1/fs
-            t_downsampled = np.linspace(0, length,
-                                 int(np.ceil(f_s / downsampling_factor)))
-
-            # Perform the downsampling
-            x_downsampled = lowpass[::downsampling_factor]
-            
-            # Calculate FFT
-            X_downsampled = np.fft.fft(x_downsampled)
-            Y_downsampled = np.arange(0, X_downsampled.shape[0])
-
-            X = np.fft.fft(x)
-            Y = np.arange(0, X.shape[0])
-
-            # cancel time_shift
-            x_shift = int(13/downsampling_factor)
-                        
-            # Keep energy the same after transformations / up-downsampling
-            x_downsampled *= X_downsampled.shape[0] / X.shape[0]
-            x_downsampled = np.concatenate((x_downsampled[x_shift:],x_downsampled[:x_shift]))
-
-            # Only upsample if Checkbox is active
-            if self.activateDownsampling is True:
-                downsampledSignal = MySignal(t_downsampled, x_downsampled, 'b', f_s, length)
-            else:
-                downsampledSignal = self.signals['square signal']
-                downsampledSignal.color = 'b'
-                X_downsampled = X
-                Y_downsampled = Y
-
-            # Add the downsampled signal to our plots
-            if self.plot_refs.get('downsampled square signal') is None:
-
-                # Add SIGNAL plot reference to our List of plot_refs
-                self.plot_refs['downsampled square signal'] = self.canvas.iir_filter_plot.plot(downsampledSignal.y,
-                                                        downsampledSignal.x,
-                                                        downsampledSignal.color) 
-
-                # Add SPECTRUM plot reference to our List of plot_refs
-                self.plot_refs['downsampled fft'] = self.canvas.iir_comb_filter_plot.plot(
-                                                        abs(X_downsampled),
-                                                        downsampledSignal.color) 
-            else:
-                # SIGNAL
-                self.plot_refs['downsampled square signal'][0].set_ydata(downsampledSignal.x)
-                self.plot_refs['downsampled square signal'][0].set_xdata(downsampledSignal.y)
-                self.plot_refs['downsampled square signal'][0].set_color(downsampledSignal.color)
-            
-                # SPECTRUM
-                self.plot_refs['downsampled fft'][0].set_ydata(np.abs(X_downsampled))
-                self.plot_refs['downsampled fft'][0].set_xdata(Y_downsampled)
-
-                # SPECTRUM - change the x value range of the plot accordingly
-                self.canvas.iir_comb_filter_plot.set_xlim(0,  X_downsampled.shape[0])
-
-            
-            # Trigger the canvas to downdate and redraw.
-            self.canvas.draw()
+        # Does the original filter even exist?
+        if self.signals['fir_filter'] is None:
+            return False 
+        
+        # Get some data from our filter
+        f_s = self.signals['fir_comb_filter'].f_s
+        a = self.signals['fir_comb_filter'].a
+        b = self.signals['fir_comb_filter'].b
+        
+        # Convert Filter to Comb Filter
+        b_comb, a_comb = combfilter(b,a, value)
+        
+        # Calculate frequency and amplitude
+        freq, h = signal.freqz(b_comb, a_comb, fs=f_s)
+        
+        # Only create comb filter if checkbox is True
+        if self.activateFIRCombFilter is True:
+            combedFilter = MySignal(freq, 20 * np.log10(abs(h)), 'g', f_s, b_comb, a_comb)
+        else: # else display the original uncombed filter
+            combedFilter = self.signals["fir_filter"]
+            combedFilter.color = 'r'
+        
+        self.plot_refs['fir_comb_filter'][0].set_ydata(combedFilter.x)
+        self.plot_refs['fir_comb_filter'][0].set_xdata(combedFilter.y)
+        self.plot_refs['fir_comb_filter'][0].set_color(combedFilter.color)
+        
+        self.canvas.draw()
 
 # ---------------------------------------------------------------------------------------------    
 # MAIN
@@ -488,7 +355,9 @@ def main():
     # create square wave signal
     length = 1           # seconds
     f_s = 10000          # Hz - Sampling Frequency
-    f_0 = 1000           # Frequency where the notch lies
+    f_notch = 2500       # Notch Frequency
+    f_0 = 1000           # Frequency 1
+    f_1 = 4000           # Frequency 2
     d_t = 1 / f_s        # discrete time steps    
     Q = 20               # Quality Factor
 
@@ -505,8 +374,8 @@ def main():
 
     # Add a function to our Application - y, x, color, name, sample frequency, duration in seconds
     #mainWindow.addFunction(t, x, 'r', 'square signal', fs, length)
-    mainWindow.addFilter(f_0, f_s, d_t, 'r', 'fir_notch', Q)
-    mainWindow.addFilter(f_0, f_s, d_t,'b', 'iir_notch', Q)
+    mainWindow.addFilter(f_0, f_1, f_s, d_t, 'r', 'fir', Q)
+    mainWindow.addFilter(f_notch, f_1,f_s, d_t,'r', 'iir', Q)
 
     app.exec_()
 

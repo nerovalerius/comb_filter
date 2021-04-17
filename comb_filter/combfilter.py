@@ -28,59 +28,24 @@ def combfilter(b, a, factor):
     ---------
     b,a:          array[double], filter coefficients transformed to a comb filter
     """
+  
+    # get length of coefficients array
+    n = b.shape[0]
+        
+    # Create array full of zeros, length = 
+    v = n + (factor * (n - 1))
 
-    # # Generate evenly spaced timestamps
-    # #x = np.linspace(0, len_signal, fs_signal, endpoint=False) 
-    # time = np.arange(0, len_signal, 1/fs_signal)   # Create vector from 0 to 1 - stepsize = 1/fs
-    # 
-    # # This will be our resulting signal
-    # f = np.zeros([len_signal])
-    # 
-    # # Go over all samples for our signal and calculate its value via fourier series
-    # for x in range(0, len_signal):
-    # 
-    #   # The inner sum - see RHS of formula
-    #   sum = 0
-    #   for k in range(1, k_max_signal+1, 2):
-    #     sum += k**(-1) * np.sin(2 * np.pi * k * time[x] * frequency)
-    #         
-    #   # The scalar in front of the sum - see RHS of formula
-    #   f[x] =  sum * 4 * h_signal * np.pi**(-1)
+    a_comb = np.zeros(v)
+    b_comb = np.zeros(v)
+        
+    # Insert at every factor+1 position a coefficient value, the rest are zeros
+    a_comb[::factor+1] = a
+    b_comb[::factor+1] = b
+
+    # Is a even an array?
+    if not isinstance(a, int):
+        a = a_comb
+
+    b = b_comb
     
     return b,a
-
-
-# calculate a Fourier Series for a Square Signal
-def myFourierSeries(fs_signal, h_signal, len_signal, k_max_signal, frequency):
-    """
-    Parameters
-    ----------
-    fs_signal:    int,    Sampling frequency of the signal
-    h_signal:     double, Amplitude
-    len_signal:   int,    Signal length in seconds
-    k_max_signal: int,    variable Fourier Series length
-
-    Returns
-    ---------
-    f:            array[double], Fourier Series of a square signal
-    """
-
-    # Generate evenly spaced timestamps
-    #x = np.linspace(0, len_signal, fs_signal, endpoint=False) 
-    time = np.arange(0, len_signal, 1/fs_signal)   # Create vector from 0 to 1 - stepsize = 1/fs
-    
-    # This will be our resulting signal
-    f = np.zeros([len_signal])
-
-    # Go over all samples for our signal and calculate its value via fourier series
-    for x in range(0, len_signal):
-
-      # The inner sum - see RHS of formula
-      sum = 0
-      for k in range(1, k_max_signal+1, 2):
-        sum += k**(-1) * np.sin(2 * np.pi * k * time[x] * frequency)
-            
-      # The scalar in front of the sum - see RHS of formula
-      f[x] =  sum * 4 * h_signal * np.pi**(-1)
-    
-    return f 
