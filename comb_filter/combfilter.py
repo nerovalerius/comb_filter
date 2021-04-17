@@ -5,10 +5,10 @@
 #   \/_____/   \/_____/   \/_/  \/_/   \/_____/         \/_/     \/_/   \/_____/     \/_/   \/_____/   \/_/ /_/ 
 #                                                                                                               
 # Project       : Comb Filter - turn an arbitrary single section filter into a comb filter and visualization with a GUI
-# File Purpose  : Handles front end, filter creation and user interaction  
+# File Purpose  : Implements a function to turn an arbitrary digital filter into a comb filter
 # Course        : Digital Signal Processing 2 - Salzburg University Of Applied Sciences
 # Author        : Armin Niedermueller
-# Date          : 15.04.2021
+# Date          : 17.04.2021
 # Literature    : none
 
 import numpy as np

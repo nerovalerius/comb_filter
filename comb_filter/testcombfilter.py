@@ -8,7 +8,7 @@
 # File Purpose  : Handles front end, filter creation and user interaction  
 # Course        : Digital Signal Processing 2 - Salzburg University Of Applied Sciences
 # Author        : Armin Niedermueller
-# Date          : 15.04.2021
+# Date          : 17.04.2021
 # Literature    : none
 
 import sys
