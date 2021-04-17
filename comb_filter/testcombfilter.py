@@ -14,6 +14,7 @@
 import sys
 import pip
 import random
+import numpy as np
 
 import matplotlib
 from matplotlib.figure import Figure
@@ -21,13 +22,13 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 matplotlib.use('Qt5Agg')
 
 from combfilter import *
-import numpy as np
 from scipy import signal
 from scipy.ndimage.interpolation import shift
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import (QWidget, QGridLayout,QPushButton, QApplication, QSlider, QCheckBox)
 from PyQt5.QtCore import Qt
+
 
 # TODOs
 # user can design a FIR filter with sliders  / knobs

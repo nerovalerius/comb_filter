@@ -1,20 +1,17 @@
-import sys
-import pip
-import random
-
-import matplotlib
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-matplotlib.use('Qt5Agg')
+#  ______     ______     __    __     ______           ______   __     __         ______   ______     ______    
+# /\  ___\   /\  __ \   /\ "-./  \   /\  == \         /\  ___\ /\ \   /\ \       /\__  _\ /\  ___\   /\  == \   
+# \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \  __<         \ \  __\ \ \ \  \ \ \____  \/_/\ \/ \ \  __\   \ \  __<   
+#  \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_____\        \ \_\    \ \_\  \ \_____\    \ \_\  \ \_____\  \ \_\ \_\ 
+#   \/_____/   \/_____/   \/_/  \/_/   \/_____/         \/_/     \/_/   \/_____/     \/_/   \/_____/   \/_/ /_/ 
+#                                                                                                               
+# Project       : Comb Filter - turn an arbitrary single section filter into a comb filter and visualization with a GUI
+# File Purpose  : Handles front end, filter creation and user interaction  
+# Course        : Digital Signal Processing 2 - Salzburg University Of Applied Sciences
+# Author        : Armin Niedermueller
+# Date          : 15.04.2021
+# Literature    : none
 
 import numpy as np
-from scipy import signal
-from scipy.ndimage.interpolation import shift
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import (QWidget, QGridLayout,QPushButton, QApplication, QSlider, QCheckBox)
-from PyQt5.QtCore import Qt
-
 
 # calculate a Fourier Series for a Square Signal
 def combfilter(b, a, factor):
