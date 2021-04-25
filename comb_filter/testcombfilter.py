@@ -18,6 +18,7 @@ import numpy as np
 
 import matplotlib
 from matplotlib.figure import Figure
+from matplotlib import patches
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 matplotlib.use('Qt5Agg')
 
@@ -85,28 +86,52 @@ class MplCanvas(FigureCanvasQTAgg):
 
         # The Plots and their formatting
         # PLOT 1
-        self.iir_filter_plot = fig.add_subplot(221, title='IIR Filter')
-        self.iir_filter_plot.set_xlabel('Frequency [Hz]')
-        self.iir_filter_plot.set_ylabel('Amplitude [dB]')
-        #self.iir_filter_plot.set_ylim(-2.0,2.0)
+        self.ax1 = fig.add_subplot(421, title='IIR Filter - Frequency Response')
+        self.ax1.set_xlabel('Frequency [Hz]')
+        self.ax1.set_ylabel('Amplitude [dB]')
+        #self.ax1.set_ylim(-2.0,2.0)
         
         # PLOT 2
-        self.iir_comb_filter_plot = fig.add_subplot(222, title='IIR Comb Filter')
-        self.iir_comb_filter_plot.set_xlabel('Frequency [Hz]')
-        self.iir_comb_filter_plot.set_ylabel('Amplitude [dB]')
-        #self.iir_comb_filter_plot.set_ylim(-2.0,2.0)
+        self.ax2 = fig.add_subplot(423, title='IIR Comb Filter - Frequency Response')
+        self.ax2.set_xlabel('Frequency [Hz]')
+        self.ax2.set_ylabel('Amplitude [dB]')
+        #self.ax2.set_ylim(-2.0,2.0)
         
         # PLOT 3
-        self.fir_filter_plot = fig.add_subplot(223, title='FIR Filter')
-        self.fir_filter_plot.set_xlabel('Frequency [Hz]')
-        self.fir_filter_plot.set_ylabel('Amplitude [dB]')
-        #self.fir_filter_plot.set_ylim(-2.0,2.0)
+        self.ax3 = fig.add_subplot(425, title='IIR Comb Filter - Phase Response')
+        self.ax3.set_xlabel('Frequency [Hz]')
+        self.ax3.set_ylabel('Phase [°]')
+        #self.ax3.set_ylim(-200.0,200.0)
         
         # PLOT 4
-        self.fir_comb_filter_plot = fig.add_subplot(224, title='FIR Comb Filter')
-        self.fir_comb_filter_plot.set_xlabel('Frequency [Hz]')
-        self.fir_comb_filter_plot.set_ylabel('Amplitude [dB]')
-        #self.fir_comb_filter_plot.set_ylim(-2.0,2.0)
+        self.ax4 = fig.add_subplot(427, title='IIR Comb Filter - PZ Map')
+        self.ax4.set_xlabel('Imaginary')
+        self.ax4.set_ylabel('Real')
+        #self.ax4.set_ylim(-2.0,2.0)
+        
+        # PLOT 5
+        self.ax5 = fig.add_subplot(422, title='FIR Filter - Frequency Response')
+        self.ax5.set_xlabel('Frequency [Hz]')
+        self.ax5.set_ylabel('Amplitude [dB]')
+        #self.ax5.set_ylim(-2.0,2.0)
+        
+        # PLOT 6
+        self.ax6 = fig.add_subplot(424, title='FIR Comb Filter - Frequency Response')
+        self.ax6.set_xlabel('Frequency [Hz]')
+        self.ax6.set_ylabel('Amplitude [dB]')
+        #self.ax6.set_ylim(-2.0,2.0)
+        
+        # PLOT 7
+        self.ax7 = fig.add_subplot(426, title='FIR Comb Filter - Phase Response')
+        self.ax7.set_xlabel('Frequency [Hz]')
+        self.ax7.set_ylabel('Phase [°]')
+        #self.ax7.set_ylim(-200.0,200.0)
+        
+        # PLOT 8
+        self.ax8 = fig.add_subplot(428, title='FIR Comb Filter - PZ Map')
+        self.ax8.set_xlabel('Imaginary')
+        self.ax8.set_ylabel('Real')
+        #self.ax8.set_ylim(-2.0,2.0)
         
 
         super(MplCanvas, self).__init__(fig)
@@ -123,7 +148,7 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         # Set Window Size and Title
-        self.setGeometry(200, 200, 1200, 900)
+        self.setGeometry(200, 200, 1600, 1000)
         self.setWindowTitle('Up- and FIR Combing Demonstration - Armin Niedermüller')
 
         # Define a grid layout
@@ -165,8 +190,8 @@ class MainWindow(QWidget):
         self.iir_comb_label.setText('Status: INACTIVE')
 
         # Connect the sliders to our plots - if the slider value changes, the plot is updated
-        self.iir_comb_slider.valueChanged[int].connect(self.IIRplotUpdate)
-        self.fir_comb_slider.valueChanged[int].connect(self.FIRplotUpdate)
+        self.iir_comb_slider.valueChanged[int].connect(self.IIRplotsUpdate)
+        self.fir_comb_slider.valueChanged[int].connect(self.FIRplotsUpdate)
 
         # Layout - 3 Rows, 2 Colums
 
@@ -220,7 +245,7 @@ class MainWindow(QWidget):
             # deactivate upsampling
             self.activateIIRCombFilter = False
             self.iir_comb_label.setText('Status: INACTIVE')
-            self.IIRplotUpdate(1)
+            self.IIRplotsUpdate(1)
 
 
     # FIR Combing Checkbox Function
@@ -233,7 +258,7 @@ class MainWindow(QWidget):
             # deactivate downsampling
             self.activateFIRCombFilter = False
             self.fir_comb_label.setText('Status: INACTIVE')
-            self.FIRplotUpdate(1)
+            self.FIRplotsUpdate(1)
 
 
     # Add a filter to our plots
@@ -257,45 +282,62 @@ class MainWindow(QWidget):
         
         # Create filter object
         combedFilter = MySignal(freq, 20 * np.log10(abs(h)), color, f_s, b, a)
+
+        # Get poles and zeros
+        z, p, k = signal.tf2zpk(b, a)
        
         # SIGNAL - Add plot reference to our List of plot refs
         if type == 'fir':
-            self.plot_refs["fir_filter"] = self.canvas.fir_filter_plot.plot(combedFilter.y,
+            self.plot_refs["fir_filter_freq"] = self.canvas.ax5.plot(combedFilter.y,
                                                 combedFilter.x,
                                                 combedFilter.color)
-            self.plot_refs["fir_comb_filter"] = self.canvas.fir_comb_filter_plot.plot(combedFilter.y,
+            self.plot_refs["fir_comb_filter_freq"] = self.canvas.ax6.plot(combedFilter.y,
                                                 combedFilter.x,
+                                                combedFilter.color)
+            self.plot_refs["fir_comb_filter_phase"] = self.canvas.ax7.plot(freq,
+                                                np.unwrap(np.angle(h)) * 180,
+                                                combedFilter.color)
+            self.plot_refs["fir_comb_filter_pz"] = self.canvas.ax8.plot(np.real(z),
+                                                np.imag(z),
                                                 combedFilter.color)
         elif type == 'iir':
-            self.plot_refs["iir_filter"] = self.canvas.iir_filter_plot.plot(combedFilter.y,
+            self.plot_refs["iir_filter_freq"] = self.canvas.ax1.plot(combedFilter.y,
                                                 combedFilter.x,
                                                 combedFilter.color) 
-            self.plot_refs["iir_comb_filter"] = self.canvas.iir_comb_filter_plot.plot(combedFilter.y,
+            self.plot_refs["iir_comb_filter_freq"] = self.canvas.ax2.plot(combedFilter.y,
                                                 combedFilter.x,
                                                 combedFilter.color) 
+            self.plot_refs["iir_comb_filter_phase"] = self.canvas.ax3.plot(freq,
+                                                np.unwrap(np.angle(h)) * 180,
+                                                combedFilter.color)
+            self.plot_refs["iir_comb_filter_pz"] = self.canvas.ax4.plot(np.real(z),
+                                                np.imag(z),
+                                                combedFilter.color)
        
         # And add the functions to our extra list
         self.signals[type+"_filter"] = combedFilter
-        self.signals[type+"_comb_filter"] = combedFilter
+        self.signals[type+"_comb_filter_freq"] = combedFilter
+        self.signals[type+"_comb_filter_phase"] = combedFilter
+        self.signals[type+"_comb_filter_pz"] = combedFilter
     
         ## update Plots
         if type == 'fir':
-            self.FIRplotUpdate(1)
+            self.FIRplotsUpdate(1)
         elif type == 'iir':
-            self.IIRplotUpdate(1)
+            self.IIRplotsUpdate(1)
 
 
     # Function to be called after using the slider
-    def IIRplotUpdate(self, value):
+    def IIRplotsUpdate(self, value):
 
         # Does the original filter even exist?
         if self.signals['iir_filter'] is None:
             return False 
         
         # Get some data from our filter
-        f_s = self.signals['iir_comb_filter'].f_s
-        a = self.signals['iir_comb_filter'].a
-        b = self.signals['iir_comb_filter'].b
+        f_s = self.signals['iir_comb_filter_freq'].f_s
+        a = self.signals['iir_comb_filter_freq'].a
+        b = self.signals['iir_comb_filter_freq'].b
         
         # Convert Filter to Comb Filter
         b_comb, a_comb = combfilter(b,a, value)
@@ -310,25 +352,42 @@ class MainWindow(QWidget):
             combedFilter = self.signals["iir_filter"]
             combedFilter.color = 'r'
         
-        self.plot_refs['iir_comb_filter'][0].set_ydata(combedFilter.x)
-        self.plot_refs['iir_comb_filter'][0].set_xdata(combedFilter.y)
-        self.plot_refs['iir_comb_filter'][0].set_color(combedFilter.color)
+        # Get poles and zeros
+        z, p, k = signal.tf2zpk(b_comb, a_comb)
         
+        ############# Update IIR Comb Filter Plot - Frequency Response##########
+        self.plot_refs['iir_comb_filter_freq'][0].set_ydata(combedFilter.x)
+        self.plot_refs['iir_comb_filter_freq'][0].set_xdata(combedFilter.y)
+        self.plot_refs['iir_comb_filter_freq'][0].set_color(combedFilter.color)
+
+        ############# Update IIR Comb Filter Plot - Phase Response ##########
+        self.plot_refs['iir_comb_filter_phase'][0].set_ydata(np.unwrap(np.angle(h)) * 180)
+        self.plot_refs['iir_comb_filter_phase'][0].set_xdata(freq)
+        self.plot_refs['iir_comb_filter_phase'][0].set_color(combedFilter.color)
+
+        ############# Update IIR Comb Filter Plot- PZ Map ##########
+        self.canvas.ax4.cla()
+        self.canvas.ax4.add_patch(patches.Circle((0, 0), radius=1, fill=False, color='black', ls='dashed'))
+        self.canvas.ax4.plot(np.real(z), np.imag(z), 'oy', label='Zeros')
+        self.canvas.ax4.plot(np.real(p), np.imag(p), 'xb', label='Poles')
+        self.canvas.ax4.legend(loc=2)
+        self.canvas.ax4.set(title='IIR Comb Filter - PZ Map', xlabel='Real', ylabel='Imaginary')
+
         self.canvas.draw()
 
 
 
     # Function to be called after using the slider
-    def FIRplotUpdate(self, value):
+    def FIRplotsUpdate(self, value):
      
         # Does the original filter even exist?
         if self.signals['fir_filter'] is None:
             return False 
         
         # Get some data from our filter
-        f_s = self.signals['fir_comb_filter'].f_s
-        a = self.signals['fir_comb_filter'].a
-        b = self.signals['fir_comb_filter'].b
+        f_s = self.signals['fir_comb_filter_freq'].f_s
+        a = self.signals['fir_comb_filter_freq'].a
+        b = self.signals['fir_comb_filter_freq'].b
         
         # Convert Filter to Comb Filter
         b_comb, a_comb = combfilter(b,a, value)
@@ -342,10 +401,29 @@ class MainWindow(QWidget):
         else: # else display the original uncombed filter
             combedFilter = self.signals["fir_filter"]
             combedFilter.color = 'r'
+
+         # Get poles and zeros
+        z, p, k = signal.tf2zpk(b_comb, a_comb)
         
-        self.plot_refs['fir_comb_filter'][0].set_ydata(combedFilter.x)
-        self.plot_refs['fir_comb_filter'][0].set_xdata(combedFilter.y)
-        self.plot_refs['fir_comb_filter'][0].set_color(combedFilter.color)
+        ############# Update FIR Comb Filter Plot - Frequency Response##########
+        self.plot_refs['fir_comb_filter_freq'][0].set_ydata(combedFilter.x)
+        self.plot_refs['fir_comb_filter_freq'][0].set_xdata(combedFilter.y)
+        self.plot_refs['fir_comb_filter_freq'][0].set_color(combedFilter.color)
+
+        ############# Update FIR Comb Filter Plot - Phase Response ##########
+        self.plot_refs['fir_comb_filter_phase'][0].set_ydata(np.unwrap(np.angle(h)) * 180)
+        self.plot_refs['fir_comb_filter_phase'][0].set_xdata(freq)
+        self.plot_refs['fir_comb_filter_phase'][0].set_color(combedFilter.color)
+
+        ############# Update FIR Comb Filter Plot- PZ Map ##########
+        self.canvas.ax8.cla()
+        self.canvas.ax8.add_patch(patches.Circle((0, 0), radius=1, fill=False, color='black', ls='dashed'))
+        self.canvas.ax8.plot(np.real(z), np.imag(z), 'oy', label='Zeros')
+        self.canvas.ax8.plot(np.real(p), np.imag(p), 'xb', label='Poles')
+        self.canvas.ax8.legend(loc=2)
+        self.canvas.ax8.set(title='FIR Comb Filter - PZ Map', xlabel='Real', ylabel='Imaginary')
+
+
         
         self.canvas.draw()
 
